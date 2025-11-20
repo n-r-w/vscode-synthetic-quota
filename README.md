@@ -1,17 +1,13 @@
-# Chutes.ai Quota Monitor for VSCode
+# Synthetic Quota Monitor for VSCode
 
-<img width="181" height="162" alt="image" src="https://github.com/user-attachments/assets/4b13cd32-3b3d-482a-a7b0-3594f29a7a81" />
-
-A VSCode extension that monitors your Chutes.ai subscription quota usage and displays it directly in the status bar with with periodic updates.
-
-> [!IMPORTANT]  
-> This extension is an independent third-party tool and is not officially affiliated with or endorsed by chutes.ai or its developers. It is designed to help users monitor their subscription quotas.
+A VSCode extension that monitors your [Synthetic API](https://synthetic.new/) quota usage and displays it directly in the status bar with periodic updates.
+Based on https://github.com/Sigmanor/vscode-chutes-quota
 
 ## ✨ Features
 
-- **Status Bar Integration**: Shows current subscription quota usage in format "Chutes: 380/2000 (19%)"
-- **Detailed Tooltips**: Hover over the status bar item to see detailed breakdown of your subscription quota
-- **Auto-refresh**: Automatically updates quota information every 5 minutes (configurable)
+- **Status Bar Integration**: Shows current quota usage in format "Synthetic: 0.1/135 requests"
+- **Detailed Tooltips**: Hover to see breakdown including renewal date
+- **Auto-refresh**: Configurable interval (default: 5 minutes)
 - **Manual Refresh**: Use the command palette to manually refresh quota data
 - **Secure Token Storage**: API tokens are stored securely using VSCode's built-in secret storage
 
@@ -19,42 +15,53 @@ A VSCode extension that monitors your Chutes.ai subscription quota usage and dis
 
 1. Install the extension
 2. Open Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
-3. Run the command `Chutes Quota: Set API Token`
-4. Enter your Chutes.ai API token when prompted (input will be hidden for security)
+3. Run the command `Synthetic Quota: Set API Token`
+4. Enter your Synthetic API token when prompted (input will be hidden for security)
 5. Optionally adjust the refresh interval in VSCode Settings
 
 ## ⚙️ Configuration
 
 This extension contributes the following settings:
 
-- `chutesQuota.refreshInterval`: Auto-refresh interval in minutes (1-60, default: 5)
+- `syntheticQuota.refreshInterval`: Auto-refresh interval in minutes (1-60, default: 5)
 
 ## 🔧 Commands
 
 The extension provides the following commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 
-- `Chutes Quota: Show Details` - Display detailed subscription quota information
-- `Chutes Quota: Refresh Quota` - Manually refresh subscription quota data
-- `Chutes Quota: Set API Token` - Securely set or update your API token
-- `Chutes Quota: Remove API Token` - Securely remove your API token and reset the extension
+- `Synthetic Quota: Show Details` - Display detailed quota information
+- `Synthetic Quota: Refresh Data` - Manually refresh quota data
+- `Synthetic Quota: Set API Token` - Securely set or update your API token
+- `Synthetic Quota: Remove API Token` - Securely remove your API token and reset the extension
 
 ## 🔌 API Integration
 
-The extension uses the Chutes.ai API endpoint:
+The extension uses the Synthetic API endpoint:
 
-- **URL**: `https://api.chutes.ai/users/me/quota_usage/me`
+- **URL**: `https://api.synthetic.new/v2/quotas`
 - **Authentication**: Bearer token
-- **Response**: JSON with subscription quota and used fields
+- **Response**: JSON with subscription quota and usage information
+
+**Response Format**:
+```json
+{
+  "subscription": {
+    "limit": 135,
+    "requests": 0.1,
+    "renewsAt": "2025-11-20T19:08:58.478Z"
+  }
+}
+```
 
 ## 🔒 Privacy & Security
 
 - API tokens are stored securely using VSCode's built-in secret storage (encrypted)
 - Tokens are never stored in plain text in settings or configuration files
-- The extension only communicates with the Chutes.ai API using your provided token
+- The extension only communicates with the Synthetic API using your provided token
 - No data is collected or transmitted to third parties
 
 ## 📋 Requirements
 
 - VSCode version 1.103.0 or higher
-- Valid Chutes.ai API token
+- Valid Synthetic API token
 - Internet connection for API requests
