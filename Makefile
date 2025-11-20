@@ -40,8 +40,8 @@ clean:
 # Package extension into VSIX file
 package:
 	@echo "Packaging extension..."
-	npm run compile
-	npm run package-vsix
+	mkdir -p build/
+	vsce package --out build/
 	@echo "Extension packaged successfully!"
 
 # Publish extension to marketplace

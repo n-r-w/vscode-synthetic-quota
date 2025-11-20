@@ -5,7 +5,7 @@ Based on https://github.com/Sigmanor/vscode-chutes-quota
 
 ## ✨ Features
 
-- **Status Bar Integration**: Shows current quota usage in format "Synthetic: 0.1/135 requests"
+- **Status Bar Integration**: Shows current quota usage in format "Synthetic: 0.1/135(30m)"
 - **Detailed Tooltips**: Hover to see breakdown including renewal date
 - **Auto-refresh**: Configurable interval (default: 5 minutes)
 - **Manual Refresh**: Use the command palette to manually refresh quota data
