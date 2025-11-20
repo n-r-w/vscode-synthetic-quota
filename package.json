@@ -2,7 +2,7 @@
   "name": "vscode-synthetic-quota",
   "displayName": "Synthetic Quota",
   "description": "Monitor your Synthetic API quota directly in VSCode status bar.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "nrw",
   "icon": "icon.png",
   "repository": {
