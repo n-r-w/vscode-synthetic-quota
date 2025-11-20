@@ -10,6 +10,52 @@ interface SyntheticQuotaResponse {
 	};
 }
 
+/**
+ * Formats the renewal time based on the time remaining until renewal
+ * @param renewsAt - ISO date string when the subscription renews
+ * @returns Formatted time string (e.g., "30m", "1h40m", "2d5h") or "invalid" for expired/invalid dates
+ */
+export function formatRenewalTime(renewsAt: string): string {
+	try {
+		const renewalDate = new Date(renewsAt);
+		const now = new Date();
+		
+		// Check if the date is valid
+		if (isNaN(renewalDate.getTime())) {
+			return "invalid";
+		}
+		
+		// Check if the renewal date is in the past
+		if (renewalDate.getTime() <= now.getTime()) {
+			return "invalid";
+		}
+		
+		// Calculate time difference in milliseconds
+		const timeDiff = renewalDate.getTime() - now.getTime();
+		
+		// Convert to minutes, hours, and days
+		const minutes = Math.floor(timeDiff / (1000 * 60));
+		const hours = Math.floor(minutes / 60);
+		const days = Math.floor(hours / 24);
+		
+		// Format based on time remaining
+		if (minutes < 60) {
+			// Less than 1 hour: show minutes only
+			return `${minutes}m`;
+		} else if (hours < 24) {
+			// 1-24 hours: show hours and minutes
+			const remainingMinutes = minutes % 60;
+			return remainingMinutes > 0 ? `${hours}h${remainingMinutes}m` : `${hours}h`;
+		} else {
+			// More than 24 hours: show days and hours
+			const remainingHours = hours % 24;
+			return remainingHours > 0 ? `${days}d${remainingHours}h` : `${days}d`;
+		}
+	} catch (error) {
+		return "invalid";
+	}
+}
+
 // Interface for extension configuration
 interface SyntheticQuotaConfig {
 	refreshInterval: number;
@@ -244,8 +290,11 @@ Renews: ${renewsDate}`;
 		this.cachedRenewsAt = renewsAt;
 		this.lastSuccessfulUpdate = new Date();
 
-		// Update status bar text - new format shows requests directly
-		this.statusBarItem.text = `$(pulse) Synthetic: ${requests}/${limit}`;
+		// Format renewal time
+		const timeRemaining = formatRenewalTime(renewsAt);
+
+		// Update status bar text - new format shows requests directly with renewal time
+		this.statusBarItem.text = `$(pulse) Synthetic: ${requests}/${limit}(${timeRemaining})`;
 
 		// Update tooltip with new format
 		const remaining = limit - requests;
@@ -272,8 +321,11 @@ Renews: ${renewsDate}`;
 	private showCachedDataWithRefreshIndicator(): void {
 		// Check if cached data exists
 		if (this.hasCachedData() && this.cachedLimit !== null && this.cachedRequests !== null && this.cachedRenewsAt !== null) {
+			// Format renewal time
+			const timeRemaining = formatRenewalTime(this.cachedRenewsAt);
+
 			// Show last data without animated icon to make refresh less intrusive
-			this.statusBarItem.text = `$(pulse) Synthetic: ${this.cachedRequests}/${this.cachedLimit}`;
+			this.statusBarItem.text = `$(pulse) Synthetic: ${this.cachedRequests}/${this.cachedLimit}(${timeRemaining})`;
 
 			// Set tooltip with refresh information
 			const remaining = this.cachedLimit - this.cachedRequests;
@@ -329,8 +381,11 @@ Renews: ${renewsDate}`;
 
 		// If cached data exists, show it with error icon
 		if (this.hasCachedData() && this.cachedLimit !== null && this.cachedRequests !== null && this.cachedRenewsAt !== null) {
+			// Format renewal time
+			const timeRemaining = formatRenewalTime(this.cachedRenewsAt);
+
 			// Show cached data with error icon
-			this.statusBarItem.text = `$(error) Synthetic: ${this.cachedRequests}/${this.cachedLimit}`;
+			this.statusBarItem.text = `$(error) Synthetic: ${this.cachedRequests}/${this.cachedLimit}(${timeRemaining})`;
 
 			// Add information about last successful update time in tooltip
 			const remaining = this.cachedLimit - this.cachedRequests;
