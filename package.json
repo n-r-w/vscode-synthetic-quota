@@ -1,13 +1,13 @@
 {
-  "name": "vscode-chutes-quota",
-  "displayName": "Chutes Quota",
-  "description": "Monitor your Chutes.ai API quota directly in VSCode status bar.",
-  "version": "0.0.6",
-  "publisher": "sigmanor",
+  "name": "vscode-synthetic-quota",
+  "displayName": "Synthetic Quota",
+  "description": "Monitor your Synthetic API quota directly in VSCode status bar.",
+  "version": "0.0.2",
+  "publisher": "nrw",
   "icon": "icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Sigmanor/vscode-chutes-quota"
+    "url": "https://github.com/n-r-w/vscode-synthetic-quota"
   },
   "engines": {
     "vscode": "^1.103.0"
@@ -24,30 +24,30 @@
   "contributes": {
     "commands": [
       {
-        "command": "chutes-quota.showDetails",
+        "command": "synthetic-quota.showDetails",
         "title": "Show Quota Details",
-        "category": "Chutes Quota"
+        "category": "Synthetic Quota"
       },
       {
-        "command": "chutes-quota.refresh",
+        "command": "synthetic-quota.refresh",
         "title": "Refresh Data",
-        "category": "Chutes Quota"
+        "category": "Synthetic Quota"
       },
       {
-        "command": "chutes-quota.setApiToken",
+        "command": "synthetic-quota.setApiToken",
         "title": "Set API Token",
-        "category": "Chutes Quota"
+        "category": "Synthetic Quota"
       },
       {
-        "command": "chutes-quota.removeApiToken",
+        "command": "synthetic-quota.removeApiToken",
         "title": "Remove API Token",
-        "category": "Chutes Quota"
+        "category": "Synthetic Quota"
       }
     ],
     "configuration": {
-      "title": "Chutes Quota",
+      "title": "Synthetic Quota",
       "properties": {
-        "chutesQuota.refreshInterval": {
+        "syntheticQuota.refreshInterval": {
           "type": "number",
           "default": 5,
           "minimum": 1,
