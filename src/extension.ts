@@ -35,14 +35,14 @@ class SyntheticQuotaMonitor {
 		// Command will be set dynamically based on state
 		this.updateStatusBarCommand();
 		this.statusBarItem.show();
-		
-		  // Initial load
-		  this.updateQuota();
-		  this.setupAutoRefresh();
-		
+
+		// Initial load
+		this.updateQuota();
+		this.setupAutoRefresh();
+
 		// Register commands
 		this.registerCommands();
-		
+
 		// Listen for configuration changes
 		vscode.workspace.onDidChangeConfiguration((event: vscode.ConfigurationChangeEvent) => {
 			if (event.affectsConfiguration('syntheticQuota')) {
@@ -61,101 +61,101 @@ class SyntheticQuotaMonitor {
 			this.updateQuota();
 		});
 
-	   const setTokenCommand = vscode.commands.registerCommand('synthetic-quota.setApiToken', () => {
-	     this.promptForApiToken();
-	   });
+		const setTokenCommand = vscode.commands.registerCommand('synthetic-quota.setApiToken', () => {
+			this.promptForApiToken();
+		});
 
-	    const removeTokenCommand = vscode.commands.registerCommand('synthetic-quota.removeApiToken', () => {
-	      this.promptForTokenRemoval();
-	    });
+		const removeTokenCommand = vscode.commands.registerCommand('synthetic-quota.removeApiToken', () => {
+			this.promptForTokenRemoval();
+		});
 
-	 const openSettingsCommand = vscode.commands.registerCommand('synthetic-quota.openSettings', () => {
-	  vscode.commands.executeCommand('workbench.action.openSettings', '@ext:nrw.vscode-synthetic-quota');
-	 });
+		const openSettingsCommand = vscode.commands.registerCommand('synthetic-quota.openSettings', () => {
+			vscode.commands.executeCommand('workbench.action.openSettings', '@ext:nrw.vscode-synthetic-quota');
+		});
 
-	   this.context.subscriptions.push(showDetailsCommand, refreshCommand, setTokenCommand, removeTokenCommand, openSettingsCommand);
+		this.context.subscriptions.push(showDetailsCommand, refreshCommand, setTokenCommand, removeTokenCommand, openSettingsCommand);
 	}
 
 	private getConfiguration(): SyntheticQuotaConfig {
 		const config = vscode.workspace.getConfiguration('syntheticQuota');
-	   return {
+		return {
 			refreshInterval: config.get<number>('refreshInterval', 5)
 		};
 	}
 
-  private async getApiToken(): Promise<string> {
-    return await this.context.secrets.get('syntheticQuota.apiToken') || '';
-  }
+	private async getApiToken(): Promise<string> {
+		return await this.context.secrets.get('syntheticQuota.apiToken') || '';
+	}
 
-  private async setApiToken(token: string): Promise<void> {
-    await this.context.secrets.store('syntheticQuota.apiToken', token);
-  }
+	private async setApiToken(token: string): Promise<void> {
+		await this.context.secrets.store('syntheticQuota.apiToken', token);
+	}
 
-  private async removeApiToken(): Promise<void> {
-    await this.context.secrets.delete('syntheticQuota.apiToken');
-    // Clear cached data
-    this.cachedLimit = null;
-    this.cachedRequests = null;
-    this.cachedRenewsAt = null;
-    this.lastSuccessfulUpdate = null;
-  }
+	private async removeApiToken(): Promise<void> {
+		await this.context.secrets.delete('syntheticQuota.apiToken');
+		// Clear cached data
+		this.cachedLimit = null;
+		this.cachedRequests = null;
+		this.cachedRenewsAt = null;
+		this.lastSuccessfulUpdate = null;
+	}
 
-  private async promptForApiToken(): Promise<void> {
-    const currentToken = await this.getApiToken();
-    const placeholder = currentToken ? 'Enter new API token to replace existing' : 'Enter your Synthetic API token';
+	private async promptForApiToken(): Promise<void> {
+		const currentToken = await this.getApiToken();
+		const placeholder = currentToken ? 'Enter new API token to replace existing' : 'Enter your Synthetic API token';
 
-    const token = await vscode.window.showInputBox({
-      prompt: 'Enter your Synthetic API token',
-      placeHolder: placeholder,
-      password: true, // Hide the input
-      ignoreFocusOut: true,
-      validateInput: (value: string) => {
-        if (!value || value.trim().length === 0) {
-          return 'API token cannot be empty';
-        }
-        if (value.length < 10) {
-          return 'API token seems too short';
-        }
-        return null;
-      }
-    });
+		const token = await vscode.window.showInputBox({
+			prompt: 'Enter your Synthetic API token',
+			placeHolder: placeholder,
+			password: true, // Hide the input
+			ignoreFocusOut: true,
+			validateInput: (value: string) => {
+				if (!value || value.trim().length === 0) {
+					return 'API token cannot be empty';
+				}
+				if (value.length < 10) {
+					return 'API token seems too short';
+				}
+				return null;
+			}
+		});
 
-    if (token !== undefined) {
-      await this.setApiToken(token.trim());
-      vscode.window.showInformationMessage('API token has been saved securely.');
+		if (token !== undefined) {
+			await this.setApiToken(token.trim());
+			vscode.window.showInformationMessage('API token has been saved securely.');
 
-      // Refresh quota after setting new token
-      this.updateQuota();
-    }
-  }
+			// Refresh quota after setting new token
+			this.updateQuota();
+		}
+	}
 
-  private async promptForTokenRemoval(): Promise<void> {
-    const currentToken = await this.getApiToken();
-    
-    // Check if there's actually a token to remove
-    if (!currentToken) {
-      vscode.window.showInformationMessage('No API token is currently configured.');
-      return;
-    }
+	private async promptForTokenRemoval(): Promise<void> {
+		const currentToken = await this.getApiToken();
 
-    const result = await vscode.window.showWarningMessage(
-      'Are you sure you want to remove your Synthetic API token? This will clear your authentication and reset the extension to the setup required state.',
-      { modal: true },
-      'Remove Token',
-      'Cancel'
-    );
+		// Check if there's actually a token to remove
+		if (!currentToken) {
+			vscode.window.showInformationMessage('No API token is currently configured.');
+			return;
+		}
 
-    if (result === 'Remove Token') {
-      await this.removeApiToken();
-      vscode.window.showInformationMessage('API token has been removed successfully.');
+		const result = await vscode.window.showWarningMessage(
+			'Are you sure you want to remove your Synthetic API token? This will clear your authentication and reset the extension to the setup required state.',
+			{ modal: true },
+			'Remove Token',
+			'Cancel'
+		);
 
-      // Update status bar to show setup required
-      this.statusBarItem.text = '$(warning) Synthetic: Setup Required';
-      this.setTooltip('Click to configure your Synthetic API token');
-      this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
-      this.updateStatusBarCommand();
-    }
-  }
+		if (result === 'Remove Token') {
+			await this.removeApiToken();
+			vscode.window.showInformationMessage('API token has been removed successfully.');
+
+			// Update status bar to show setup required
+			this.statusBarItem.text = '$(warning) Synthetic: Setup Required';
+			this.setTooltip('Click to configure your Synthetic API token');
+			this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+			this.updateStatusBarCommand();
+		}
+	}
 
 
 	private setupAutoRefresh(): void {
@@ -178,34 +178,34 @@ class SyntheticQuotaMonitor {
 		}
 
 		const config = this.getConfiguration();
-    const apiToken = await this.getApiToken();
-		
-    if (!apiToken.trim()) {
-   this.statusBarItem.text = '$(warning) Synthetic: Setup Required';
-   this.setTooltip('Click to configure your Synthetic API token');
-   this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
-   this.updateStatusBarCommand();
-   return;
-  }
+		const apiToken = await this.getApiToken();
 
-		
-				this.isRefreshing = true;
-				// Show cached data with refresh indicator if available, otherwise show loading
-				if (this.hasCachedData()) {
-					this.showCachedDataWithRefreshIndicator();
-				} else {
-          // Use a non-animated icon for initial loading to make updates less intrusive
-          this.statusBarItem.text = '$(pulse) Synthetic: Loading...';
-					this.setTooltip('Fetching quota information...');
-					this.statusBarItem.backgroundColor = undefined;
-					this.updateStatusBarCommand();
-				}
+		if (!apiToken.trim()) {
+			this.statusBarItem.text = '$(warning) Synthetic: Setup Required';
+			this.setTooltip('Click to configure your Synthetic API token');
+			this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+			this.updateStatusBarCommand();
+			return;
+		}
+
+
+		this.isRefreshing = true;
+		// Show cached data with refresh indicator if available, otherwise show loading
+		if (this.hasCachedData()) {
+			this.showCachedDataWithRefreshIndicator();
+		} else {
+			// Use a non-animated icon for initial loading to make updates less intrusive
+			this.statusBarItem.text = '$(pulse) Synthetic: Loading...';
+			this.setTooltip('Fetching quota information...');
+			this.statusBarItem.backgroundColor = undefined;
+			this.updateStatusBarCommand();
+		}
 		try {
 			const response = await axios.get<SyntheticQuotaResponse>(
 				'https://api.synthetic.new/v2/quotas',
 				{
 					headers: {
-			         'Authorization': `Bearer ${apiToken}`,
+						'Authorization': `Bearer ${apiToken}`,
 						'Content-Type': 'application/json'
 					},
 					timeout: 30000 // 30 second timeout
@@ -215,9 +215,9 @@ class SyntheticQuotaMonitor {
 			const { limit, requests, renewsAt } = response.data.subscription;
 			const remaining = limit - requests;
 
-			
-						// Update status bar using cached display method
-						this.updateStatusBarDisplay(limit, requests, renewsAt);
+
+			// Update status bar using cached display method
+			this.updateStatusBarDisplay(limit, requests, renewsAt);
 		} catch (error) {
 			this.handleError(error);
 		} finally {
@@ -228,7 +228,7 @@ class SyntheticQuotaMonitor {
 	private createTooltip(limit: number, requests: number, remaining: number, renewsAt: string): string {
 		// Format renewal date in user-friendly way
 		const renewsDate = new Date(renewsAt).toLocaleDateString();
-		
+
 		return `Quota Usage
 
 Limit: ${limit} requests
@@ -245,7 +245,7 @@ Renews: ${renewsDate}`;
 		this.lastSuccessfulUpdate = new Date();
 
 		// Update status bar text - new format shows requests directly
-		this.statusBarItem.text = `$(pulse) Synthetic: ${requests}/${limit} requests`;
+		this.statusBarItem.text = `$(pulse) Synthetic: ${requests}/${limit}`;
 
 		// Update tooltip with new format
 		const remaining = limit - requests;
@@ -272,8 +272,8 @@ Renews: ${renewsDate}`;
 	private showCachedDataWithRefreshIndicator(): void {
 		// Check if cached data exists
 		if (this.hasCachedData() && this.cachedLimit !== null && this.cachedRequests !== null && this.cachedRenewsAt !== null) {
-	     // Show last data without animated icon to make refresh less intrusive
-	     this.statusBarItem.text = `$(pulse) Synthetic: ${this.cachedRequests}/${this.cachedLimit} requests`;
+			// Show last data without animated icon to make refresh less intrusive
+			this.statusBarItem.text = `$(pulse) Synthetic: ${this.cachedRequests}/${this.cachedLimit}`;
 
 			// Set tooltip with refresh information
 			const remaining = this.cachedLimit - this.cachedRequests;
@@ -288,7 +288,7 @@ Renews: ${renewsDate}`;
 
 		if (axios.isAxiosError(error)) {
 			const axiosError = error as AxiosError;
-			
+
 			if (axiosError.response) {
 				// API returned an error response
 				const status = axiosError.response.status;
@@ -330,7 +330,7 @@ Renews: ${renewsDate}`;
 		// If cached data exists, show it with error icon
 		if (this.hasCachedData() && this.cachedLimit !== null && this.cachedRequests !== null && this.cachedRenewsAt !== null) {
 			// Show cached data with error icon
-			this.statusBarItem.text = `$(error) Synthetic: ${this.cachedRequests}/${this.cachedLimit} requests`;
+			this.statusBarItem.text = `$(error) Synthetic: ${this.cachedRequests}/${this.cachedLimit}`;
 
 			// Add information about last successful update time in tooltip
 			const remaining = this.cachedLimit - this.cachedRequests;
@@ -349,26 +349,26 @@ Renews: ${renewsDate}`;
 			this.statusBarItem.text = statusText;
 			this.setTooltip(`Error fetching quota: ${errorMessage}\n\nClick to retry or check configuration`);
 		}
-		
-    // Clear explicit background to avoid aggressive red background; rely on icon and text for error visibility
-    this.statusBarItem.backgroundColor = undefined;
+
+		// Clear explicit background to avoid aggressive red background; rely on icon and text for error visibility
+		this.statusBarItem.backgroundColor = undefined;
 		this.updateStatusBarCommand();
 
 		console.error('Synthetic Quota Error:', error);
 	}
 
 	private async showQuotaDetails(): Promise<void> {
-    const apiToken = await this.getApiToken();
-		
-    if (!apiToken.trim()) {
+		const apiToken = await this.getApiToken();
+
+		if (!apiToken.trim()) {
 			const result = await vscode.window.showWarningMessage(
 				'Synthetic API token not configured. Would you like to set it up now?',
-			     'Set API Token',
+				'Set API Token',
 				'Cancel'
 			);
-			
-      if (result === 'Set API Token') {
-        await this.promptForApiToken();
+
+			if (result === 'Set API Token') {
+				await this.promptForApiToken();
 			}
 			return;
 		}
@@ -395,18 +395,18 @@ Renews: ${renewsDate}`;
 
 	// Note: VSCode doesn't provide hover events for status bar items
 	// This method is included for potential future use if VSCode adds this capability
-	private handleStatusBarHover(isHovering: boolean): void {		
+	private handleStatusBarHover(isHovering: boolean): void {
 		// Only update if we have valid quota data
 		if (this.statusBarItem.text.includes('Synthetic:') &&
-				!this.statusBarItem.text.includes('Setup Required') &&
-				!this.statusBarItem.text.includes('Loading') &&
-				!this.statusBarItem.text.includes('Error')) {
+			!this.statusBarItem.text.includes('Setup Required') &&
+			!this.statusBarItem.text.includes('Loading') &&
+			!this.statusBarItem.text.includes('Error')) {
 			// Extract current quota information from text
 			const match = this.statusBarItem.text.match(/Synthetic: ([\d.]+)\/(\d+) requests/);
 			if (match) {
 				const requests = match[1];
 				const limit = match[2];
-				this.statusBarItem.text = `${isHovering ? '$(sync)' : '$(pulse)'} Synthetic: ${requests}/${limit} requests`;
+				this.statusBarItem.text = `${isHovering ? '$(sync)' : '$(pulse)'} Synthetic: ${requests}/${limit}`;
 			}
 		}
 	}
@@ -420,13 +420,13 @@ Renews: ${renewsDate}`;
 	private updateStatusBarCommand(): void {
 		if (this.statusBarItem.text.includes('Setup Required')) {
 			this.statusBarItem.command = 'synthetic-quota.setApiToken';
-		  } else if (this.statusBarItem.text.includes('$(error)') || this.statusBarItem.text.includes('Error') ||
-		           this.statusBarItem.text.includes('Invalid Token') ||
-		           this.statusBarItem.text.includes('Forbidden') ||
-		           this.statusBarItem.text.includes('Rate Limited') ||
-		           this.statusBarItem.text.includes('API Down') ||
-		           this.statusBarItem.text.includes('API Error') ||
-		           this.statusBarItem.text.includes('Network Error')) {
+		} else if (this.statusBarItem.text.includes('$(error)') || this.statusBarItem.text.includes('Error') ||
+			this.statusBarItem.text.includes('Invalid Token') ||
+			this.statusBarItem.text.includes('Forbidden') ||
+			this.statusBarItem.text.includes('Rate Limited') ||
+			this.statusBarItem.text.includes('API Down') ||
+			this.statusBarItem.text.includes('API Error') ||
+			this.statusBarItem.text.includes('Network Error')) {
 			this.statusBarItem.command = 'synthetic-quota.refresh';
 		} else {
 			this.statusBarItem.command = 'synthetic-quota.openSettings';
@@ -445,10 +445,10 @@ let quotaMonitor: SyntheticQuotaMonitor;
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Synthetic Quota extension is now active');
-	
+
 	// Initialize the quota monitor
 	quotaMonitor = new SyntheticQuotaMonitor(context);
-	
+
 	// Add to subscriptions for proper cleanup
 	context.subscriptions.push({
 		dispose: () => quotaMonitor.dispose()
